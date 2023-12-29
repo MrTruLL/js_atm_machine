@@ -1,7 +1,6 @@
 /* 
 ATM machine server 
-Course : Beyond the Basics of JavaScript
-TDL Homework : Svitlana Makarova
+Course : JavaScript Intermediate
 */
 
 // TODO: 1. Install/Import the necessary packages and start up a server
