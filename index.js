@@ -1,6 +1,7 @@
 /* 
 ATM machine server 
-Course : JavaScript Intermediate
+Course : Beyond the Basics of JavaScript
+TDL Homework : Svitlana Makarova
 */
 
 // TODO: 1. Install/Import the necessary packages and start up a server
@@ -12,6 +13,8 @@ import bodyParser from 'body-parser'
 
 const atm = express()
 atm.use(bodyParser.json()) //middleware
+
+const DEBUG = false //adding debug parameter to console output
 
 const port = 3000 // The port our server will listen to
 const atm_db_complete = {"1": 0, "5": 0, "10": 0, "20": 0, "50": 0, "100": 0, "500": 0, "1000": 0, "total" : 0};
@@ -64,7 +67,7 @@ atm.post('/', async (req, res) => {
 	
 	//concatenate arrays
 	atm_db = {...allowedList, ...atm_db_min}
-	console.log("Initialized Atm_DB: ", atm_db)
+	DEBUG && console.log("Initialized Atm_DB: ", atm_db)
 	res.status(201).json({message: 'ATM is up and running!'})
 	return
 })
@@ -96,13 +99,13 @@ atm.post('/deposit', (req, res) => {
 	const atm_calculations_array = Object.keys(atm_calculations).reverse()
 	
 	//deposit banknotes, in the "most efficient way possible". (compare deposited banknotes to DB banknotes and add relevant amount deposited)
-	console.log("== Deposit process ==")
+	DEBUG && console.log("== Deposit process ==")
 	let depositAmount = body.amount
 	let transaction = {}
 	atm_calculations_array.forEach((element) => {
-		console.log("Trying to split deposit (" + depositAmount + ") by " + element)
+		DEBUG && console.log("Trying to split deposit (" + depositAmount + ") by " + element)
 		const depositBanknote = Math.floor(depositAmount / element)
-		console.log("Division result: " + depositBanknote)
+		DEBUG && console.log("Division result: " + depositBanknote)
 		
 		// add to atm_db[atm_key] if not 0
 		if (depositBanknote != 0) {
@@ -111,12 +114,12 @@ atm.post('/deposit', (req, res) => {
 			// decrease amount to calculate on banknotesNumber
 			depositAmount = depositAmount - (depositBanknote * element)
 			
-			console.log("Transaction JSON forming: Element(key) = " + element + ", depositBanknote(value) = " + depositBanknote)
+			DEBUG && console.log("Transaction JSON forming: Element(key) = " + element + ", depositBanknote(value) = " + depositBanknote)
 			
 			transaction[element] = depositBanknote
 			
-			console.log("Amount left: ", depositAmount)
-			console.log("transaction - ", transaction)
+			DEBUG && console.log("Amount left: ", depositAmount)
+			DEBUG && console.log("transaction - ", transaction)
 		}
 	})
 		
@@ -125,11 +128,11 @@ atm.post('/deposit', (req, res) => {
 	let atm_total_calculations = JSON.parse(JSON.stringify(atm_db))
 	delete atm_total_calculations["total"]
 	
-	console.log("== Calculating total ==")
-	console.log("atm_calculations:", atm_total_calculations)
+	DEBUG && console.log("== Calculating total ==")
+	DEBUG && console.log("atm_calculations:", atm_total_calculations)
 	for (let atm_key in atm_total_calculations) {
-		console.log("atm_key:", Number(atm_key))
-		console.log("atm_total_calculations[atm_key]:", atm_total_calculations[atm_key])
+		DEBUG && console.log("atm_key:", Number(atm_key))
+		DEBUG && console.log("atm_total_calculations[atm_key]:", atm_total_calculations[atm_key])
 		total += (Number(atm_key) * atm_total_calculations[atm_key])
 	}
 	atm_db["total"] = total
@@ -144,7 +147,7 @@ atm.post('/deposit', (req, res) => {
 // TODO: 4. Implement ATM withdraw => `/withdraw`
 atm.get('/withdraw', async (req, res) => {
 	const { query } = req
-	console.log("Withdraw query", query)
+	DEBUG && console.log("Withdraw query", query)
 	
 	if (Object.keys(atm_db).length === 0) { //check if initiated
 		res.status(400).json({ error: 'Cannot make transaction. ATM is not initialized!'})
@@ -161,34 +164,34 @@ atm.get('/withdraw', async (req, res) => {
 	
 	//check if ATM have enough money
 	if (atm_db["total"] < withdrawAmount) {
-		console.log("Withdraw attempt: " + "Not enough money in the ATM!")
+		DEBUG && console.log("Withdraw attempt: " + "Not enough money in the ATM!")
 		res.status(503).json({ error: "Not enough money in the ATM!"})
 		return
 	}
 	
 	//withdraw banknotes, in the "most efficient way possible". (compare withdrawal banknotes to DB banknotes and add relevant amount deposited)
-	console.log("== Withdraw process ==")
+	DEBUG && console.log("== Withdraw process ==")
 	let transaction = {}
 	atm_availableBanknotes_array.forEach((element) => {
-		console.log("Trying to split withdraw (" + withdrawAmount + ") by " + element)
+		DEBUG && console.log("Trying to split withdraw (" + withdrawAmount + ") by " + element)
 		const withdrawBanknote = Math.floor(withdrawAmount / element)
-		console.log("Division result: " + withdrawBanknote)
+		DEBUG && console.log("Division result: " + withdrawBanknote)
 		
 		// remove from atm_db[atm_key] if not 0 AND enough money for specific banknote
 		if (withdrawBanknote != 0 && (atm_db[element] >= (withdrawBanknote * element))) {
 			// decrease atm_db
-			console.log("Element " + element + " was - ", atm_db[element])
+			DEBUG && console.log("Element " + element + " was - ", atm_db[element])
 			atm_db[element] -= withdrawBanknote
-			console.log("Element " + element + " become - ", atm_db[element])
+			DEBUG && console.log("Element " + element + " become - ", atm_db[element])
 			// decrease amount to calculate on banknotesNumber
 			withdrawAmount = withdrawAmount - (withdrawBanknote * element)
 	
-			console.log("Transaction JSON forming: Element(key) = " + element + ", withdrawBanknote(value) = " + withdrawBanknote)
+			DEBUG && console.log("Transaction JSON forming: Element(key) = " + element + ", withdrawBanknote(value) = " + withdrawBanknote)
 			
 			transaction[element] = withdrawBanknote
 			
-			console.log("Amount left: ", withdrawAmount)
-			console.log("transaction - ", transaction)
+			DEBUG && console.log("Amount left: ", withdrawAmount)
+			DEBUG && console.log("transaction - ", transaction)
 		}
 	})
 	
@@ -203,11 +206,11 @@ atm.get('/withdraw', async (req, res) => {
 	let atm_total_calculations = JSON.parse(JSON.stringify(atm_db))
 	delete atm_total_calculations["total"]
 	
-	console.log("== Calculating total ==")
-	console.log("atm_calculations:", atm_total_calculations)
+	DEBUG && console.log("== Calculating total ==")
+	DEBUG && console.log("atm_calculations:", atm_total_calculations)
 	for (let atm_key in atm_total_calculations) {
-		console.log("atm_key:", Number(atm_key))
-		console.log("atm_total_calculations[atm_key]:", atm_total_calculations[atm_key])
+		DEBUG && console.log("atm_key:", Number(atm_key))
+		DEBUG && console.log("atm_total_calculations[atm_key]:", atm_total_calculations[atm_key])
 		total += (Number(atm_key) * atm_total_calculations[atm_key])
 	}
 	atm_db["total"] = total
@@ -227,12 +230,12 @@ atm.get('/balance', (req, res) => {
 		return
 	}
 	
-	console.log("ATM balance IF request: ", atm_db["total"])
+	DEBUG && console.log("ATM balance IF request: ", atm_db["total"])
 	res.status(200).json({message: 'Balance request', balance: atm_db.total})
 	return
 })
 
 // atm.get('/', (req, res) => {
 	// res.json({message: 'Hello World!'})
-	// console.log("Current ATM: ", atm_db)
+	// DEBUG && console.log("Current ATM: ", atm_db)
 // })
