@@ -1,19 +1,20 @@
 /* 
 ATM machine server 
-Course : JavaScript Intermediate
+Course : Beyond the Basics of JavaScript
+TDL Homework : Svitlana Makarova
 */
 
 // TODO: 1. Install/Import the necessary packages and start up a server
-
 import express from 'express'
 import fetch from 'node-fetch' 
 import { z } from 'zod'
 import bodyParser from 'body-parser'
 
 const atm = express()
+
 atm.use(bodyParser.json()) //middleware
 
-const DEBUG = false //adding debug parameter to console output
+var DEBUG = false //adding debug parameter to console output
 
 const port = 3000 // The port our server will listen to
 const atm_db_complete = {"1": 0, "5": 0, "10": 0, "20": 0, "50": 0, "100": 0, "500": 0, "1000": 0, "total" : 0};
@@ -171,33 +172,30 @@ atm.get('/withdraw', async (req, res) => {
 	//withdraw banknotes, in the "most efficient way possible". (compare withdrawal banknotes to DB banknotes and add relevant amount deposited)
 	DEBUG && console.log("== Withdraw process ==")
 	let transaction = {}
+	
 	atm_availableBanknotes_array.forEach((element) => {
 		DEBUG && console.log("Trying to split withdraw (" + withdrawAmount + ") by " + element)
 		const withdrawBanknote = Math.floor(withdrawAmount / element)
 		DEBUG && console.log("Division result: " + withdrawBanknote)
 		
-		// remove from atm_db[atm_key] if not 0 AND enough money for specific banknote
-		if (withdrawBanknote != 0 && (atm_db[element] >= (withdrawBanknote * element))) {
-			// decrease atm_db
-			DEBUG && console.log("Element " + element + " was - ", atm_db[element])
-			atm_db[element] -= withdrawBanknote
-			DEBUG && console.log("Element " + element + " become - ", atm_db[element])
-			// decrease amount to calculate on banknotesNumber
-			withdrawAmount = withdrawAmount - (withdrawBanknote * element)
-	
-			DEBUG && console.log("Transaction JSON forming: Element(key) = " + element + ", withdrawBanknote(value) = " + withdrawBanknote)
-			
-			transaction[element] = withdrawBanknote
-			
-			DEBUG && console.log("Amount left: ", withdrawAmount)
-			DEBUG && console.log("transaction - ", transaction)
+		// check from atm_db[atm_key] if not 0 AND enough money for specific banknote and create transaction JSON
+		if (withdrawBanknote != 0 && (atm_db[element] >= withdrawBanknote)) {
+			withdrawAmount -= (withdrawBanknote * element);
+			DEBUG && console.log("Current amount: " + withdrawAmount)
+			transaction[element] = withdrawBanknote;
 		}
 	})
 	
-	//if withdrawAmount still wasn't withdrawn at all - error
-	if (withdrawAmount = query.amount) {
+	//if withdrawAmount wasn't reduced completely
+	if (withdrawAmount != 0) {
+		DEBUG && console.log("withdrawAmount wasn't reduced completely, sending 'Not enough banknotes'.")
 		res.status(400).json({ error: "Not enough banknotes to complete the transaction!"})
 		return
+	} else { // decrease atm_db if withdraw process was successfull (transaction JSON created)
+		for (let item in transaction) {
+			atm_db[item] -= transaction[item]
+			DEBUG && console.log("DB reduced item:" + item + " by:" + transaction[item])
+		}
 	}
 	
 	//update Total amount for atm_db.total
@@ -208,11 +206,10 @@ atm.get('/withdraw', async (req, res) => {
 	DEBUG && console.log("== Calculating total ==")
 	DEBUG && console.log("atm_calculations:", atm_total_calculations)
 	for (let atm_key in atm_total_calculations) {
-		DEBUG && console.log("atm_key:", Number(atm_key))
-		DEBUG && console.log("atm_total_calculations[atm_key]:", atm_total_calculations[atm_key])
 		total += (Number(atm_key) * atm_total_calculations[atm_key])
 	}
 	atm_db["total"] = total
+	DEBUG && console.log("Recalculated atm total:", total)
 	
 	//add json transaction Response with total deposited amount
 	transaction["total"] = query.amount
@@ -234,7 +231,7 @@ atm.get('/balance', (req, res) => {
 	return
 })
 
-// atm.get('/', (req, res) => {
-	// res.json({message: 'Hello World!'})
-	// DEBUG && console.log("Current ATM: ", atm_db)
-// })
+atm.get('/', (req, res) => {
+	res.json({message: 'Hello World!'})
+	DEBUG && console.log("Current ATM: ", atm_db)
+})
